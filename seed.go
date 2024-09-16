@@ -9,8 +9,12 @@ import (
 )
 
 const (
-	SeedSize    = 64 // 512 bits for seed
-	EntropySize = 32 // 256 bits entropy for Bitcoin-like approach
+	SeedSize    = 64        // 512 bits for seed
+	EntropySize = 32        // 256 bits entropy for Bitcoin-like approach
+	SaltSize    = 16        // 128 bits for salt size
+	Rounds      = 3         // Number of Argon2 rounds/iterations
+	Memory      = 64 * 1024 // Memory cost for Argon2 (in KiB)
+	Parallelism = 4         // Parallelism factor for Argon2
 )
 
 // GenerateEntropy generates secure random entropy similar to Bitcoin private key generation.
@@ -34,33 +38,19 @@ func GeneratePhrase(entropy []byte) (string, error) {
 }
 
 // GenerateSeedWithSalt generates a seed using a mnemonic and salt.
-// Example function if salt is larger
 func GenerateSeedWithSalt(mnemonic string, salt []byte) ([]byte, error) {
 	// Ensure the salt is 16 bytes by slicing if necessary
-	if len(salt) > 16 {
-		salt = salt[:16]
+	if len(salt) > SaltSize {
+		salt = salt[:SaltSize]
 	}
 
 	// Convert the mnemonic to a byte array
 	mnemonicBytes := []byte(mnemonic)
 
 	// Use Argon2 to generate a memory-hard seed
-	seed := argon2.IDKey(mnemonicBytes, salt, 3, 64*1024, 4, SeedSize)
+	seed := argon2.IDKey(mnemonicBytes, salt, Rounds, Memory, Parallelism, SeedSize)
 
 	return seed, nil
-}
-
-// Example validation: Check if length is valid for BIP-39
-func IsValidEntropy(entropy []byte) bool {
-	// Valid entropy lengths are 16, 20, 24, 28, 32 bytes
-	validLengths := map[int]bool{
-		16: true,
-		20: true,
-		24: true,
-		28: true,
-		32: true,
-	}
-	return validLengths[len(entropy)]
 }
 
 // SetKeyFromPassphrase generates both a mnemonic and a seed, performing cryptographic functions.
@@ -77,8 +67,15 @@ func SetKeyFromPassphrase() (string, []byte, error) {
 		return "", nil, fmt.Errorf("failed to generate phrase: %v", err)
 	}
 
-	// Step 3: Generate the seed using the mnemonic and salt
-	seed, err := GenerateSeedWithSalt(mnemonic)
+	// Step 3: Generate random salt (16 bytes)
+	salt := make([]byte, SaltSize)
+	_, err = rand.Read(salt)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to generate salt: %v", err)
+	}
+
+	// Step 4: Generate the seed using the mnemonic and salt
+	seed, err := GenerateSeedWithSalt(mnemonic, salt)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to generate seed: %v", err)
 	}
