@@ -51,6 +51,19 @@ func GenerateSeedWithSalt(mnemonic string) ([]byte, error) {
 	return seed, nil
 }
 
+// Example validation: Check if length is valid for BIP-39
+func IsValidEntropy(entropy []byte) bool {
+	// Valid entropy lengths are 16, 20, 24, 28, 32 bytes
+	validLengths := map[int]bool{
+		16: true,
+		20: true,
+		24: true,
+		28: true,
+		32: true,
+	}
+	return validLengths[len(entropy)]
+}
+
 // SetKeyFromPassphrase generates both a mnemonic and a seed, performing cryptographic functions.
 func SetKeyFromPassphrase() (string, []byte, error) {
 	// Step 1: Generate entropy
