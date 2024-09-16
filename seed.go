@@ -12,7 +12,7 @@ const (
 	SeedSize    = 64        // 512 bits for seed
 	EntropySize = 32        // 256 bits entropy for Bitcoin-like approach
 	SaltSize    = 16        // 128 bits for salt size
-	Rounds      = 3         // Number of Argon2 rounds/iterations
+	Rounds      = 10        // Increase rounds for Argon2
 	Memory      = 64 * 1024 // Memory cost for Argon2 (in KiB)
 	Parallelism = 4         // Parallelism factor for Argon2
 )
