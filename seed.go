@@ -35,8 +35,8 @@ func GeneratePhrase(entropy []byte) (string, error) {
 
 // GenerateSeedWithSalt generates a seed using a mnemonic and salt.
 func GenerateSeedWithSalt(mnemonic string) ([]byte, error) {
-	// Generate random salt (32 bytes)
-	salt := make([]byte, 32)
+	// Generate random salt (16 bytes)
+	salt := make([]byte, 16)
 	_, err := rand.Read(salt)
 	if err != nil {
 		return nil, fmt.Errorf("error generating salt: %v", err)
@@ -46,7 +46,7 @@ func GenerateSeedWithSalt(mnemonic string) ([]byte, error) {
 	mnemonicBytes := []byte(mnemonic)
 
 	// Use Argon2 to generate a memory-hard seed
-	seed := argon2.IDKey(mnemonicBytes, salt, 1, 64*1024, 4, SeedSize)
+	seed := argon2.IDKey(mnemonicBytes, salt, 3, 64*1024, 4, SeedSize)
 
 	return seed, nil
 }
