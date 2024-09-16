@@ -34,12 +34,11 @@ func GeneratePhrase(entropy []byte) (string, error) {
 }
 
 // GenerateSeedWithSalt generates a seed using a mnemonic and salt.
-func GenerateSeedWithSalt(mnemonic string) ([]byte, error) {
-	// Generate random salt (16 bytes)
-	salt := make([]byte, 16)
-	_, err := rand.Read(salt)
-	if err != nil {
-		return nil, fmt.Errorf("error generating salt: %v", err)
+// Example function if salt is larger
+func GenerateSeedWithSalt(mnemonic string, salt []byte) ([]byte, error) {
+	// Ensure the salt is 16 bytes by slicing if necessary
+	if len(salt) > 16 {
+		salt = salt[:16]
 	}
 
 	// Convert the mnemonic to a byte array
