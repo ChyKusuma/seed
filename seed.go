@@ -2,19 +2,19 @@ package seed
 
 import (
 	"crypto/rand"
+	"crypto/sha512"
 	"fmt"
 
+	"golang.org/x/crypto/pbkdf2"
+
 	"github.com/tyler-smith/go-bip39"
-	"golang.org/x/crypto/argon2"
 )
 
 const (
-	SeedSize    = 64        // 512 bits for seed
-	EntropySize = 32        // 256 bits entropy for Bitcoin-like approach
-	SaltSize    = 16        // 128 bits for salt size
-	Rounds      = 10        // Increase rounds for Argon2
-	Memory      = 64 * 1024 // Memory cost for Argon2 (in KiB)
-	Parallelism = 4         // Parallelism factor for Argon2
+	SeedSize     = 64         // 512 bits for seed
+	EntropySize  = 32         // 256 bits entropy for Bitcoin-like approach
+	Pbkdf2Rounds = 2048       // Standard for BIP-39
+	SaltPrefix   = "mnemonic" // Salt prefix as per BIP-39 standard
 )
 
 // GenerateEntropy generates secure random entropy similar to Bitcoin private key generation.
@@ -37,24 +37,32 @@ func GeneratePhrase(entropy []byte) (string, error) {
 	return mnemonic, nil
 }
 
-// GenerateSeedWithSalt generates a seed using a mnemonic and salt.
-func GenerateSeedWithSalt(mnemonic string, salt []byte) ([]byte, error) {
-	// Ensure the salt is 16 bytes by slicing if necessary
-	if len(salt) > SaltSize {
-		salt = salt[:SaltSize]
+// GenerateSeedWithSalt generates a seed using a mnemonic and optional passphrase (salt).
+func GenerateSeedWithSalt(mnemonic, passphrase string) []byte {
+	// Create the salt by prepending the salt prefix (BIP-39 standard uses "mnemonic" as the salt prefix)
+	salt := SaltPrefix + passphrase
+
+	// Use PBKDF2 with HMAC-SHA512 to derive the seed
+	seed := pbkdf2.Key([]byte(mnemonic), []byte(salt), Pbkdf2Rounds, SeedSize, sha512.New)
+
+	return seed
+}
+
+// Example validation: Check if length is valid for BIP-39
+func IsValidEntropy(entropy []byte) bool {
+	// Valid entropy lengths are 16, 20, 24, 28, 32 bytes
+	validLengths := map[int]bool{
+		16: true,
+		20: true,
+		24: true,
+		28: true,
+		32: true,
 	}
-
-	// Convert the mnemonic to a byte array
-	mnemonicBytes := []byte(mnemonic)
-
-	// Use Argon2 to generate a memory-hard seed
-	seed := argon2.IDKey(mnemonicBytes, salt, Rounds, Memory, Parallelism, SeedSize)
-
-	return seed, nil
+	return validLengths[len(entropy)]
 }
 
 // SetKeyFromPassphrase generates both a mnemonic and a seed, performing cryptographic functions.
-func SetKeyFromPassphrase() (string, []byte, error) {
+func SetKeyFromPassphrase(passphrase string) (string, []byte, error) {
 	// Step 1: Generate entropy
 	entropy, err := GenerateEntropy()
 	if err != nil {
@@ -67,18 +75,8 @@ func SetKeyFromPassphrase() (string, []byte, error) {
 		return "", nil, fmt.Errorf("failed to generate phrase: %v", err)
 	}
 
-	// Step 3: Generate random salt (16 bytes)
-	salt := make([]byte, SaltSize)
-	_, err = rand.Read(salt)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to generate salt: %v", err)
-	}
-
-	// Step 4: Generate the seed using the mnemonic and salt
-	seed, err := GenerateSeedWithSalt(mnemonic, salt)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to generate seed: %v", err)
-	}
+	// Step 3: Generate the seed using the mnemonic and optional passphrase
+	seed := GenerateSeedWithSalt(mnemonic, passphrase)
 
 	// Return both the mnemonic and the seed
 	return mnemonic, seed, nil
