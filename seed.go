@@ -44,7 +44,6 @@ func HashSeed(seed []byte) ([]byte, error) {
 	return hash[:16], nil
 }
 
-// EncodeBase32 encodes the data in Base32 without padding.
 // EncodeBase32 encodes the data in Base32 with padding.
 func EncodeBase32(data []byte) string {
 	return base32.StdEncoding.EncodeToString(data)
