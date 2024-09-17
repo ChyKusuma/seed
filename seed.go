@@ -5,15 +5,14 @@ import (
 	"fmt"
 
 	"github.com/tyler-smith/go-bip39"
-	"golang.org/x/crypto/argon2"
 )
 
 const (
 	SeedSize    = 64 // 512 bits for seed
-	EntropySize = 32 // 256 bits entropy
+	EntropySize = 32 // 256 bits entropy for Bitcoin-like approach
 )
 
-// GenerateEntropy generates secure random entropy's private key generation.
+// GenerateEntropy generates secure random entropy similar to Bitcoin private key generation.
 func GenerateEntropy() ([]byte, error) {
 	entropy := make([]byte, EntropySize)
 	_, err := rand.Read(entropy)
@@ -33,39 +32,15 @@ func GeneratePhrase(entropy []byte) (string, error) {
 	return mnemonic, nil
 }
 
-// GenerateSeedWithSalt generates a seed using a mnemonic and salt.
-func GenerateSeedWithSalt(mnemonic string) ([]byte, error) {
-	// Generate random salt (32 bytes)
-	salt := make([]byte, 32)
-	_, err := rand.Read(salt)
-	if err != nil {
-		return nil, fmt.Errorf("error generating salt: %v", err)
-	}
-
-	// Convert the mnemonic to a byte array
-	mnemonicBytes := []byte(mnemonic)
-
-	// Use Argon2 to generate a memory-hard seed
-	seed := argon2.IDKey(mnemonicBytes, salt, 1, 64*1024, 4, SeedSize)
-
+// GenerateSeedWithPassphrase generates a seed using a mnemonic and a passphrase.
+func GenerateSeedWithPassphrase(mnemonic, passphrase string) ([]byte, error) {
+	// Generate seed from mnemonic and passphrase
+	seed := bip39.NewSeed(mnemonic, passphrase)
 	return seed, nil
 }
 
-// Example validation: Check if length is valid for BIP-39
-func IsValidEntropy(entropy []byte) bool {
-	// Valid entropy lengths are 16, 20, 24, 28, 32 bytes
-	validLengths := map[int]bool{
-		16: true,
-		20: true,
-		24: true,
-		28: true,
-		32: true,
-	}
-	return validLengths[len(entropy)]
-}
-
-// SetKeyFromPassphrase generates both a mnemonic and a seed, performing cryptographic functions.
-func SetKeyFromPassphrase() (string, []byte, error) {
+// GenerateMnemonicAndSeed generates a mnemonic and a seed from a passphrase.
+func GenerateMnemonicAndSeed(passphrase string) (mnemonic string, seed []byte, err error) {
 	// Step 1: Generate entropy
 	entropy, err := GenerateEntropy()
 	if err != nil {
@@ -73,13 +48,13 @@ func SetKeyFromPassphrase() (string, []byte, error) {
 	}
 
 	// Step 2: Generate the mnemonic phrase from entropy
-	mnemonic, err := GeneratePhrase(entropy)
+	mnemonic, err = GeneratePhrase(entropy)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to generate phrase: %v", err)
+		return "", nil, fmt.Errorf("failed to generate mnemonic: %v", err)
 	}
 
-	// Step 3: Generate the seed using the mnemonic and salt
-	seed, err := GenerateSeedWithSalt(mnemonic)
+	// Step 3: Generate the seed using the mnemonic and passphrase
+	seed, err = GenerateSeedWithPassphrase(mnemonic, passphrase)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to generate seed: %v", err)
 	}
@@ -89,8 +64,11 @@ func SetKeyFromPassphrase() (string, []byte, error) {
 }
 
 func main() {
-	// Call SetKeyFromPassphrase to generate a mnemonic and a seed
-	mnemonic, seed, err := SetKeyFromPassphrase()
+	// Define a passphrase for seed generation
+	passphrase := "example passphrase" // Replace with your passphrase
+
+	// Call GenerateMnemonicAndSeed to generate a mnemonic and a seed
+	mnemonic, seed, err := GenerateMnemonicAndSeed(passphrase)
 	if err != nil {
 		fmt.Printf("Error generating mnemonic and seed: %v\n", err)
 		return
