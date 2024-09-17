@@ -26,7 +26,6 @@ func GenerateEntropy() ([]byte, error) {
 
 // GeneratePhrase generates a BIP-39 mnemonic phrase from entropy.
 func GeneratePhrase(entropy []byte) (string, error) {
-	// Generate mnemonic from entropy
 	mnemonic, err := bip39.NewMnemonic(entropy)
 	if err != nil {
 		return "", fmt.Errorf("error generating mnemonic: %v", err)
@@ -36,63 +35,45 @@ func GeneratePhrase(entropy []byte) (string, error) {
 
 // GenerateSeed generates a seed using a mnemonic without a passphrase.
 func GenerateSeed(mnemonic string) ([]byte, error) {
-	// Generate seed from mnemonic
 	seed := bip39.NewSeed(mnemonic, "") // No passphrase
 	return seed, nil
 }
 
 // HashSeed hashes the seed using SHA-256 and truncates to 128 bits.
 func HashSeed(seed []byte) ([]byte, error) {
-	// Hash the seed using SHA-256
 	hash := sha256.Sum256(seed)
-	// Truncate to 128 bits (16 bytes)
 	return hash[:16], nil
 }
 
 // EncodeBase32 encodes the data in Base32 without padding.
 func EncodeBase32(data []byte) string {
 	encoded := base32.StdEncoding.EncodeToString(data)
-	// Remove padding characters
 	return strings.TrimRight(encoded, "=")
 }
 
 // GenerateMnemonicAndSeed generates a mnemonic and a hashed, Base32-encoded seed.
 func GenerateMnemonicAndSeed() (mnemonic string, base32Seed string, err error) {
-	// Step 1: Generate entropy
 	entropy, err := GenerateEntropy()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate entropy: %v", err)
 	}
 
-	// Step 2: Generate the mnemonic phrase from entropy
 	mnemonic, err = GeneratePhrase(entropy)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate mnemonic: %v", err)
 	}
 
-	// Step 3: Generate the seed using the mnemonic without passphrase
 	seed, err := GenerateSeed(mnemonic)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate seed: %v", err)
 	}
 
-	// Print the seed and its size
-	fmt.Printf("Seed: %x\n", seed)
-	fmt.Printf("Seed Size: %d bytes\n", len(seed))
-
-	// Step 4: Hash the seed and encode in Base32
 	hashedSeed, err := HashSeed(seed)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to hash seed: %v", err)
 	}
 	base32Seed = EncodeBase32(hashedSeed)
 
-	// Print the hashed seed and its size
-	fmt.Printf("Hashed Seed: %x\n", hashedSeed)
-	fmt.Printf("Hashed Seed Size: %d bytes\n", len(hashedSeed))
-	fmt.Printf("Base32 Encoded Hashed Seed: %s\n", base32Seed)
-
-	// Return the mnemonic and the Base32-encoded hashed seed
 	return mnemonic, base32Seed, nil
 }
 
