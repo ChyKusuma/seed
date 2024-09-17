@@ -6,11 +6,14 @@ import (
 	"encoding/base32"
 	"fmt"
 
+	"github.com/ChyKusuma/crypter"
 	"github.com/tyler-smith/go-bip39"
 )
 
+// Constants
 const (
-	EntropySize = 32 // 256 bits entropy
+	EntropySize = 32
+	SaltSize    = crypter.WALLET_CRYPTO_IV_SIZE // Size of the salt for key derivation
 )
 
 // GenerateEntropy generates secure random entropy for private key generation.
@@ -49,8 +52,8 @@ func EncodeBase32(data []byte) string {
 	return base32.StdEncoding.EncodeToString(data)
 }
 
-// GenerateMnemonicAndSeed generates a mnemonic and a hashed, Base32-encoded seed.
-func GenerateMnemonicAndSeed() (mnemonic string, base32Seed string, err error) {
+// GenerateMnemonicAndSeed derives a key and IV from a mnemonic using a passphrase and salt.
+func GenerateMnemonicAndSeed(passphrase, salt []byte) (mnemonic string, base32Seed string, err error) {
 	entropy, err := GenerateEntropy()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate entropy: %v", err)
@@ -71,6 +74,12 @@ func GenerateMnemonicAndSeed() (mnemonic string, base32Seed string, err error) {
 		return "", "", fmt.Errorf("failed to hash seed: %v", err)
 	}
 	base32Seed = EncodeBase32(hashedSeed)
+
+	// Create a crypter instance and set key and IV from passphrase
+	crypterInstance := crypter.CCrypter{}
+	if !crypterInstance.SetKeyFromPassphrase(passphrase, salt, 10000) { // 10000 iterations for key stretching
+		return "", "", fmt.Errorf("failed to set key from passphrase")
+	}
 
 	return mnemonic, base32Seed, nil
 }
