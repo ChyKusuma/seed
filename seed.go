@@ -77,17 +77,3 @@ func GenerateMnemonicAndSeed() (mnemonic string, base32Seed string, err error) {
 	return mnemonic, base32Seed, nil
 }
 
-func main() {
-	// Generate mnemonic and Base32-encoded hashed seed
-	mnemonic, base32Seed, err := GenerateMnemonicAndSeed()
-	if err != nil {
-		fmt.Printf("Error generating mnemonic and seed: %v\n", err)
-		return
-	}
-
-	// Print the generated mnemonic
-	fmt.Printf("Generated Mnemonic: %s\n", mnemonic)
-
-	// Print the Base32-encoded hashed seed
-	fmt.Printf("Base32 Encoded Hashed Seed: %s\n", base32Seed)
-}
