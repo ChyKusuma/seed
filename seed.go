@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"fmt"
-	"strings"
 
 	"github.com/tyler-smith/go-bip39"
 )
@@ -46,9 +45,9 @@ func HashSeed(seed []byte) ([]byte, error) {
 }
 
 // EncodeBase32 encodes the data in Base32 without padding.
+// EncodeBase32 encodes the data in Base32 with padding.
 func EncodeBase32(data []byte) string {
-	encoded := base32.StdEncoding.EncodeToString(data)
-	return strings.TrimRight(encoded, "=")
+	return base32.StdEncoding.EncodeToString(data)
 }
 
 // GenerateMnemonicAndSeed generates a mnemonic and a hashed, Base32-encoded seed.
@@ -76,4 +75,3 @@ func GenerateMnemonicAndSeed() (mnemonic string, base32Seed string, err error) {
 
 	return mnemonic, base32Seed, nil
 }
-
